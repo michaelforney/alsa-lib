@@ -221,10 +221,6 @@ void snd_pcm_adpcm_decode(const snd_pcm_channel_area_t *dst_areas,
 			  unsigned int putidx,
 			  snd_pcm_adpcm_state_t *states)
 {
-#define PUT16_LABELS
-#include "plugin_ops.h"
-#undef PUT16_LABELS
-	void *put = put16_labels[putidx];
 	unsigned int channel;
 	for (channel = 0; channel < channels; ++channel, ++states) {
 		const char *src;
@@ -250,11 +246,7 @@ void snd_pcm_adpcm_decode(const snd_pcm_channel_area_t *dst_areas,
 			else
 				v = (*src >> 4) & 0x0f;
 			sample = adpcm_decoder(v, states);
-			goto *put;
-#define PUT16_END after
-#include "plugin_ops.h"
-#undef PUT16_END
-		after:
+			put16(dst, sample, putidx);
 			src += src_step;
 			srcbit += srcbit_step;
 			if (srcbit == 8) {
@@ -274,10 +266,6 @@ void snd_pcm_adpcm_encode(const snd_pcm_channel_area_t *dst_areas,
 			  unsigned int getidx,
 			  snd_pcm_adpcm_state_t *states)
 {
-#define GET16_LABELS
-#include "plugin_ops.h"
-#undef GET16_LABELS
-	void *get = get16_labels[getidx];
 	unsigned int channel;
 	int16_t sample = 0;
 	for (channel = 0; channel < channels; ++channel, ++states) {
@@ -298,11 +286,7 @@ void snd_pcm_adpcm_encode(const snd_pcm_channel_area_t *dst_areas,
 		frames1 = frames;
 		while (frames1-- > 0) {
 			int v;
-			goto *get;
-#define GET16_END after
-#include "plugin_ops.h"
-#undef GET16_END
-		after:
+			sample = get16(src, getidx);
 			v = adpcm_encoder(sample, states);
 			if (dstbit)
 				*dst = (*dst & 0xf0) | v;

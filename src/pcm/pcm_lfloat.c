@@ -98,13 +98,6 @@ void snd_pcm_lfloat_convert_integer_float(const snd_pcm_channel_area_t *dst_area
 					  unsigned int channels, snd_pcm_uframes_t frames,
 					  unsigned int get32idx, unsigned int put32floatidx)
 {
-#define GET32_LABELS
-#define PUT32F_LABELS
-#include "plugin_ops.h"
-#undef PUT32F_LABELS
-#undef GET32_LABELS
-	void *get32 = get32_labels[get32idx];
-	void *put32float = put32float_labels[put32floatidx];
 	unsigned int channel;
 	for (channel = 0; channel < channels; ++channel) {
 		const char *src;
@@ -122,16 +115,8 @@ void snd_pcm_lfloat_convert_integer_float(const snd_pcm_channel_area_t *dst_area
 		dst_step = snd_pcm_channel_area_step(dst_area);
 		frames1 = frames;
 		while (frames1-- > 0) {
-			goto *get32;
-#define GET32_END sample_loaded
-#include "plugin_ops.h"
-#undef GET32_END
-		sample_loaded:
-			goto *put32float;
-#define PUT32F_END sample_put
-#include "plugin_ops.h"
-#undef PUT32F_END
-		sample_put:
+			sample = get32(src, get32idx);
+			put32float(dst, sample, put32floatidx);
 			src += src_step;
 			dst += dst_step;
 		}
@@ -143,13 +128,6 @@ void snd_pcm_lfloat_convert_float_integer(const snd_pcm_channel_area_t *dst_area
 					  unsigned int channels, snd_pcm_uframes_t frames,
 					  unsigned int put32idx, unsigned int get32floatidx)
 {
-#define PUT32_LABELS
-#define GET32F_LABELS
-#include "plugin_ops.h"
-#undef GET32F_LABELS
-#undef PUT32_LABELS
-	void *put32 = put32_labels[put32idx];
-	void *get32float = get32float_labels[get32floatidx];
 	unsigned int channel;
 	for (channel = 0; channel < channels; ++channel) {
 		const char *src;
@@ -167,16 +145,8 @@ void snd_pcm_lfloat_convert_float_integer(const snd_pcm_channel_area_t *dst_area
 		dst_step = snd_pcm_channel_area_step(dst_area);
 		frames1 = frames;
 		while (frames1-- > 0) {
-			goto *get32float;
-#define GET32F_END sample_loaded
-#include "plugin_ops.h"
-#undef GET32F_END
-		sample_loaded:
-			goto *put32;
-#define PUT32_END sample_put
-#include "plugin_ops.h"
-#undef PUT32_END
-		sample_put:
+			sample = get32float(src, get32floatidx);
+			put32(dst, sample, put32idx);
 			src += src_step;
 			dst += dst_step;
 		}

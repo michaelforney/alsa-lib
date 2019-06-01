@@ -431,12 +431,6 @@ static void convert_to_s16(snd_pcm_rate_t *rate, int16_t *buf,
 			   snd_pcm_uframes_t offset, unsigned int frames,
 			   unsigned int channels)
 {
-#ifndef DOC_HIDDEN
-#define GET16_LABELS
-#include "plugin_ops.h"
-#undef GET16_LABELS
-#endif /* DOC_HIDDEN */
-	void *get = get16_labels[rate->get_idx];
 	const char *src;
 	int16_t sample;
 	const char *srcs[channels];
@@ -451,13 +445,7 @@ static void convert_to_s16(snd_pcm_rate_t *rate, int16_t *buf,
 	while (frames--) {
 		for (c = 0; c < channels; c++) {
 			src = srcs[c];
-			goto *get;
-#ifndef DOC_HIDDEN
-#define GET16_END after_get
-#include "plugin_ops.h"
-#undef GET16_END
-#endif /* DOC_HIDDEN */
-		after_get:
+			sample = get16(src, rate->get_idx);
 			*buf++ = sample;
 			srcs[c] += src_step[c];
 		}
@@ -469,12 +457,6 @@ static void convert_from_s16(snd_pcm_rate_t *rate, const int16_t *buf,
 			     snd_pcm_uframes_t offset, unsigned int frames,
 			     unsigned int channels)
 {
-#ifndef DOC_HIDDEN
-#define PUT16_LABELS
-#include "plugin_ops.h"
-#undef PUT16_LABELS
-#endif /* DOC_HIDDEN */
-	void *put = put16_labels[rate->put_idx];
 	char *dst;
 	int16_t sample;
 	char *dsts[channels];
@@ -490,13 +472,7 @@ static void convert_from_s16(snd_pcm_rate_t *rate, const int16_t *buf,
 		for (c = 0; c < channels; c++) {
 			dst = dsts[c];
 			sample = *buf++;
-			goto *put;
-#ifndef DOC_HIDDEN
-#define PUT16_END after_put
-#include "plugin_ops.h"
-#undef PUT16_END
-#endif /* DOC_HIDDEN */
-		after_put:
+			put16(dst, sample, rate->put_idx);
 			dsts[c] += dst_step[c];
 		}
 	}

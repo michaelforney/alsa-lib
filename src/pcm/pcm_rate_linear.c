@@ -71,13 +71,6 @@ static void linear_expand(struct rate_linear *rate,
 			  const snd_pcm_channel_area_t *src_areas,
 			  snd_pcm_uframes_t src_offset, unsigned int src_frames)
 {
-#define GET16_LABELS
-#define PUT16_LABELS
-#include "plugin_ops.h"
-#undef GET16_LABELS
-#undef PUT16_LABELS
-	void *get = get16_labels[rate->get_idx];
-	void *put = put16_labels[rate->put_idx];
 	unsigned int get_threshold = rate->pitch;
 	unsigned int channel;
 	unsigned int src_frames1;
@@ -107,22 +100,14 @@ static void linear_expand(struct rate_linear *rate,
 				pos -= get_threshold;
 				old_sample = new_sample;
 				if (src_frames1 < src_frames) {
-					goto *get;
-#define GET16_END after_get
-#include "plugin_ops.h"
-#undef GET16_END
-				after_get:
+					sample = get16(src, rate->get_idx);
 					new_sample = sample;
 				}
 			}
 			new_weight = (pos << (16 - rate->pitch_shift)) / (get_threshold >> rate->pitch_shift);
 			old_weight = 0x10000 - new_weight;
 			sample = (old_sample * old_weight + new_sample * new_weight) >> 16;
-			goto *put;
-#define PUT16_END after_put
-#include "plugin_ops.h"
-#undef PUT16_END
-		after_put:
+			put16(dst, sample, rate->put_idx);
 			dst += dst_step;
 			dst_frames1++;
 			pos += LINEAR_DIV;
@@ -193,13 +178,6 @@ static void linear_shrink(struct rate_linear *rate,
 			  const snd_pcm_channel_area_t *src_areas,
 			  snd_pcm_uframes_t src_offset, unsigned int src_frames)
 {
-#define GET16_LABELS
-#define PUT16_LABELS
-#include "plugin_ops.h"
-#undef GET16_LABELS
-#undef PUT16_LABELS
-	void *get = get16_labels[rate->get_idx];
-	void *put = put16_labels[rate->put_idx];
 	unsigned int get_increment = rate->pitch;
 	unsigned int channel;
 	unsigned int src_frames1;
@@ -224,13 +202,7 @@ static void linear_shrink(struct rate_linear *rate,
 		src_frames1 = 0;
 		dst_frames1 = 0;
 		while (src_frames1 < src_frames) {
-			
-			goto *get;
-#define GET16_END after_get
-#include "plugin_ops.h"
-#undef GET16_END
-		after_get:
-			new_sample = sample;
+			new_sample = get16(src, rate->get_idx);
 			src += src_step;
 			src_frames1++;
 			pos += get_increment;
@@ -239,11 +211,7 @@ static void linear_shrink(struct rate_linear *rate,
 				old_weight = (pos << (32 - LINEAR_DIV_SHIFT)) / (get_increment >> (LINEAR_DIV_SHIFT - 16));
 				new_weight = 0x10000 - old_weight;
 				sample = (old_sample * old_weight + new_sample * new_weight) >> 16;
-				goto *put;
-#define PUT16_END after_put
-#include "plugin_ops.h"
-#undef PUT16_END
-			after_put:
+				put16(dst, sample, rate->put_idx);
 				dst += dst_step;
 				dst_frames1++;
 				if (CHECK_SANITY(dst_frames1 > dst_frames)) {

@@ -149,10 +149,6 @@ static void snd_pcm_iec958_decode(snd_pcm_iec958_t *iec,
 				  snd_pcm_uframes_t src_offset,
 				  unsigned int channels, snd_pcm_uframes_t frames)
 {
-#define PUT32_LABELS
-#include "plugin_ops.h"
-#undef PUT32_LABELS
-	void *put = put32_labels[iec->getput_idx];
 	unsigned int channel;
 	for (channel = 0; channel < channels; ++channel) {
 		const uint32_t *src;
@@ -168,11 +164,7 @@ static void snd_pcm_iec958_decode(snd_pcm_iec958_t *iec,
 		frames1 = frames;
 		while (frames1-- > 0) {
 			int32_t sample = iec958_to_s32(iec, *src);
-			goto *put;
-#define PUT32_END after
-#include "plugin_ops.h"
-#undef PUT32_END
-		after:
+			put32(dst, sample, iec->getput_idx);
 			src += src_step;
 			dst += dst_step;
 		}
@@ -186,10 +178,6 @@ static void snd_pcm_iec958_encode(snd_pcm_iec958_t *iec,
 				  snd_pcm_uframes_t src_offset,
 				  unsigned int channels, snd_pcm_uframes_t frames)
 {
-#define GET32_LABELS
-#include "plugin_ops.h"
-#undef GET32_LABELS
-	void *get = get32_labels[iec->getput_idx];
 	unsigned int channel;
 	int32_t sample = 0;
 	int counter = iec->counter;
@@ -207,11 +195,7 @@ static void snd_pcm_iec958_encode(snd_pcm_iec958_t *iec,
 		frames1 = frames;
 		iec->counter = counter;
 		while (frames1-- > 0) {
-			goto *get;
-#define GET32_END after
-#include "plugin_ops.h"
-#undef GET32_END
-		after:
+			sample = get32(src, iec->getput_idx);
 			sample = iec958_subframe(iec, sample, channel);
 			// fprintf(stderr, "%d:%08x\n", frames1, sample);
 			*dst = sample;

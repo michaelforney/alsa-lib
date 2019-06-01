@@ -19,6 +19,9 @@
  *
  */
 
+#include <math.h>
+#include <stdint.h>
+
 #ifndef SX_INLINES
 #define SX_INLINES
 static inline uint32_t sx20(uint32_t x)
@@ -92,626 +95,353 @@ static inline uint32_t sx24s(uint32_t x)
 #define _put_triple_s(ptr,val) _put_triple_le(ptr,val)
 #endif
 
-#ifdef CONV_LABELS
-/* src_wid src_endswap sign_toggle dst_wid dst_endswap */
-static void *const conv_labels[4 * 2 * 2 * 4 * 2] = {
-	&&conv_xxx1_xxx1,	 /*  8h ->  8h */
-	&&conv_xxx1_xxx1,	 /*  8h ->  8s */
-	&&conv_xxx1_xx10,	 /*  8h -> 16h */
-	&&conv_xxx1_xx01,	 /*  8h -> 16s */
-	&&conv_xxx1_x100,	 /*  8h -> 24h */
-	&&conv_xxx1_001x,	 /*  8h -> 24s */
-	&&conv_xxx1_1000,	 /*  8h -> 32h */
-	&&conv_xxx1_0001,	 /*  8h -> 32s */
-	&&conv_xxx1_xxx9,	 /*  8h ^>  8h */
-	&&conv_xxx1_xxx9,	 /*  8h ^>  8s */
-	&&conv_xxx1_xx90,	 /*  8h ^> 16h */
-	&&conv_xxx1_xx09,	 /*  8h ^> 16s */
-	&&conv_xxx1_x900,	 /*  8h ^> 24h */
-	&&conv_xxx1_009x,	 /*  8h ^> 24s */
-	&&conv_xxx1_9000,	 /*  8h ^> 32h */
-	&&conv_xxx1_0009,	 /*  8h ^> 32s */
-	&&conv_xxx1_xxx1,	 /*  8s ->  8h */
-	&&conv_xxx1_xxx1,	 /*  8s ->  8s */
-	&&conv_xxx1_xx10,	 /*  8s -> 16h */
-	&&conv_xxx1_xx01,	 /*  8s -> 16s */
-	&&conv_xxx1_x100,	 /*  8s -> 24h */
-	&&conv_xxx1_001x,	 /*  8s -> 24s */
-	&&conv_xxx1_1000,	 /*  8s -> 32h */
-	&&conv_xxx1_0001,	 /*  8s -> 32s */
-	&&conv_xxx1_xxx9,	 /*  8s ^>  8h */
-	&&conv_xxx1_xxx9,	 /*  8s ^>  8s */
-	&&conv_xxx1_xx90,	 /*  8s ^> 16h */
-	&&conv_xxx1_xx09,	 /*  8s ^> 16s */
-	&&conv_xxx1_x900,	 /*  8s ^> 24h */
-	&&conv_xxx1_009x,	 /*  8s ^> 24s */
-	&&conv_xxx1_9000,	 /*  8s ^> 32h */
-	&&conv_xxx1_0009,	 /*  8s ^> 32s */
-	&&conv_xx12_xxx1,	 /* 16h ->  8h */
-	&&conv_xx12_xxx1,	 /* 16h ->  8s */
-	&&conv_xx12_xx12,	 /* 16h -> 16h */
-	&&conv_xx12_xx21,	 /* 16h -> 16s */
-	&&conv_xx12_x120,	 /* 16h -> 24h */
-	&&conv_xx12_021x,	 /* 16h -> 24s */
-	&&conv_xx12_1200,	 /* 16h -> 32h */
-	&&conv_xx12_0021,	 /* 16h -> 32s */
-	&&conv_xx12_xxx9,	 /* 16h ^>  8h */
-	&&conv_xx12_xxx9,	 /* 16h ^>  8s */
-	&&conv_xx12_xx92,	 /* 16h ^> 16h */
-	&&conv_xx12_xx29,	 /* 16h ^> 16s */
-	&&conv_xx12_x920,	 /* 16h ^> 24h */
-	&&conv_xx12_029x,	 /* 16h ^> 24s */
-	&&conv_xx12_9200,	 /* 16h ^> 32h */
-	&&conv_xx12_0029,	 /* 16h ^> 32s */
-	&&conv_xx12_xxx2,	 /* 16s ->  8h */
-	&&conv_xx12_xxx2,	 /* 16s ->  8s */
-	&&conv_xx12_xx21,	 /* 16s -> 16h */
-	&&conv_xx12_xx12,	 /* 16s -> 16s */
-	&&conv_xx12_x210,	 /* 16s -> 24h */
-	&&conv_xx12_012x,	 /* 16s -> 24s */
-	&&conv_xx12_2100,	 /* 16s -> 32h */
-	&&conv_xx12_0012,	 /* 16s -> 32s */
-	&&conv_xx12_xxxA,	 /* 16s ^>  8h */
-	&&conv_xx12_xxxA,	 /* 16s ^>  8s */
-	&&conv_xx12_xxA1,	 /* 16s ^> 16h */
-	&&conv_xx12_xx1A,	 /* 16s ^> 16s */
-	&&conv_xx12_xA10,	 /* 16s ^> 24h */
-	&&conv_xx12_01Ax,	 /* 16s ^> 24s */
-	&&conv_xx12_A100,	 /* 16s ^> 32h */
-	&&conv_xx12_001A,	 /* 16s ^> 32s */
-	&&conv_x123_xxx1,	 /* 24h ->  8h */
-	&&conv_x123_xxx1,	 /* 24h ->  8s */
-	&&conv_x123_xx12,	 /* 24h -> 16h */
-	&&conv_x123_xx21,	 /* 24h -> 16s */
-	&&conv_x123_x123,	 /* 24h -> 24h */
-	&&conv_x123_321x,	 /* 24h -> 24s */
-	&&conv_x123_1230,	 /* 24h -> 32h */
-	&&conv_x123_0321,	 /* 24h -> 32s */
-	&&conv_x123_xxx9,	 /* 24h ^>  8h */
-	&&conv_x123_xxx9,	 /* 24h ^>  8s */
-	&&conv_x123_xx92,	 /* 24h ^> 16h */
-	&&conv_x123_xx29,	 /* 24h ^> 16s */
-	&&conv_x123_x923,	 /* 24h ^> 24h */
-	&&conv_x123_329x,	 /* 24h ^> 24s */
-	&&conv_x123_9230,	 /* 24h ^> 32h */
-	&&conv_x123_0329,	 /* 24h ^> 32s */
-	&&conv_123x_xxx3,	 /* 24s ->  8h */
-	&&conv_123x_xxx3,	 /* 24s ->  8s */
-	&&conv_123x_xx32,	 /* 24s -> 16h */
-	&&conv_123x_xx23,	 /* 24s -> 16s */
-	&&conv_123x_x321,	 /* 24s -> 24h */
-	&&conv_123x_123x,	 /* 24s -> 24s */
-	&&conv_123x_3210,	 /* 24s -> 32h */
-	&&conv_123x_0123,	 /* 24s -> 32s */
-	&&conv_123x_xxxB,	 /* 24s ^>  8h */
-	&&conv_123x_xxxB,	 /* 24s ^>  8s */
-	&&conv_123x_xxB2,	 /* 24s ^> 16h */
-	&&conv_123x_xx2B,	 /* 24s ^> 16s */
-	&&conv_123x_xB21,	 /* 24s ^> 24h */
-	&&conv_123x_12Bx,	 /* 24s ^> 24s */
-	&&conv_123x_B210,	 /* 24s ^> 32h */
-	&&conv_123x_012B,	 /* 24s ^> 32s */
-	&&conv_1234_xxx1,	 /* 32h ->  8h */
-	&&conv_1234_xxx1,	 /* 32h ->  8s */
-	&&conv_1234_xx12,	 /* 32h -> 16h */
-	&&conv_1234_xx21,	 /* 32h -> 16s */
-	&&conv_1234_x123,	 /* 32h -> 24h */
-	&&conv_1234_321x,	 /* 32h -> 24s */
-	&&conv_1234_1234,	 /* 32h -> 32h */
-	&&conv_1234_4321,	 /* 32h -> 32s */
-	&&conv_1234_xxx9,	 /* 32h ^>  8h */
-	&&conv_1234_xxx9,	 /* 32h ^>  8s */
-	&&conv_1234_xx92,	 /* 32h ^> 16h */
-	&&conv_1234_xx29,	 /* 32h ^> 16s */
-	&&conv_1234_x923,	 /* 32h ^> 24h */
-	&&conv_1234_329x,	 /* 32h ^> 24s */
-	&&conv_1234_9234,	 /* 32h ^> 32h */
-	&&conv_1234_4329,	 /* 32h ^> 32s */
-	&&conv_1234_xxx4,	 /* 32s ->  8h */
-	&&conv_1234_xxx4,	 /* 32s ->  8s */
-	&&conv_1234_xx43,	 /* 32s -> 16h */
-	&&conv_1234_xx34,	 /* 32s -> 16s */
-	&&conv_1234_x432,	 /* 32s -> 24h */
-	&&conv_1234_234x,	 /* 32s -> 24s */
-	&&conv_1234_4321,	 /* 32s -> 32h */
-	&&conv_1234_1234,	 /* 32s -> 32s */
-	&&conv_1234_xxxC,	 /* 32s ^>  8h */
-	&&conv_1234_xxxC,	 /* 32s ^>  8s */
-	&&conv_1234_xxC3,	 /* 32s ^> 16h */
-	&&conv_1234_xx3C,	 /* 32s ^> 16s */
-	&&conv_1234_xC32,	 /* 32s ^> 24h */
-	&&conv_1234_23Cx,	 /* 32s ^> 24s */
-	&&conv_1234_C321,	 /* 32s ^> 32h */
-	&&conv_1234_123C,	 /* 32s ^> 32s */
-};
-#endif
-
-#ifdef CONV_END
-while(0) {
-conv_xxx1_xxx1: as_u8(dst) = as_u8c(src); goto CONV_END;
-conv_xxx1_xx10: as_u16(dst) = (uint16_t)as_u8c(src) << 8; goto CONV_END;
-conv_xxx1_xx01: as_u16(dst) = (uint16_t)as_u8c(src); goto CONV_END;
-conv_xxx1_x100: as_u32(dst) = sx24((uint32_t)as_u8c(src) << 16); goto CONV_END;
-conv_xxx1_001x: as_u32(dst) = sx24s((uint32_t)as_u8c(src) << 8); goto CONV_END;
-conv_xxx1_1000: as_u32(dst) = (uint32_t)as_u8c(src) << 24; goto CONV_END;
-conv_xxx1_0001: as_u32(dst) = (uint32_t)as_u8c(src); goto CONV_END;
-conv_xxx1_xxx9: as_u8(dst) = as_u8c(src) ^ 0x80; goto CONV_END;
-conv_xxx1_xx90: as_u16(dst) = (uint16_t)(as_u8c(src) ^ 0x80) << 8; goto CONV_END;
-conv_xxx1_xx09: as_u16(dst) = (uint16_t)(as_u8c(src) ^ 0x80); goto CONV_END;
-conv_xxx1_x900: as_u32(dst) = sx24((uint32_t)(as_u8c(src) ^ 0x80) << 16); goto CONV_END;
-conv_xxx1_009x: as_u32(dst) = sx24s((uint32_t)(as_u8c(src) ^ 0x80) << 8); goto CONV_END;
-conv_xxx1_9000: as_u32(dst) = (uint32_t)(as_u8c(src) ^ 0x80) << 24; goto CONV_END;
-conv_xxx1_0009: as_u32(dst) = (uint32_t)(as_u8c(src) ^ 0x80); goto CONV_END;
-conv_xx12_xxx1: as_u8(dst) = as_u16c(src) >> 8; goto CONV_END;
-conv_xx12_xx12: as_u16(dst) = as_u16c(src); goto CONV_END;
-conv_xx12_xx21: as_u16(dst) = bswap_16(as_u16c(src)); goto CONV_END;
-conv_xx12_x120: as_u32(dst) = sx24((uint32_t)as_u16c(src) << 8); goto CONV_END;
-conv_xx12_021x: as_u32(dst) = sx24s((uint32_t)bswap_16(as_u16c(src)) << 8); goto CONV_END;
-conv_xx12_1200: as_u32(dst) = (uint32_t)as_u16c(src) << 16; goto CONV_END;
-conv_xx12_0021: as_u32(dst) = (uint32_t)bswap_16(as_u16c(src)); goto CONV_END;
-conv_xx12_xxx9: as_u8(dst) = (as_u16c(src) >> 8) ^ 0x80; goto CONV_END;
-conv_xx12_xx92: as_u16(dst) = as_u16c(src) ^ 0x8000; goto CONV_END;
-conv_xx12_xx29: as_u16(dst) = bswap_16(as_u16c(src)) ^ 0x80; goto CONV_END;
-conv_xx12_x920: as_u32(dst) = sx24((uint32_t)(as_u16c(src) ^ 0x8000) << 8); goto CONV_END;
-conv_xx12_029x: as_u32(dst) = sx24s((uint32_t)(bswap_16(as_u16c(src)) ^ 0x80) << 8); goto CONV_END;
-conv_xx12_9200: as_u32(dst) = (uint32_t)(as_u16c(src) ^ 0x8000) << 16; goto CONV_END;
-conv_xx12_0029: as_u32(dst) = (uint32_t)(bswap_16(as_u16c(src)) ^ 0x80); goto CONV_END;
-conv_xx12_xxx2: as_u8(dst) = as_u16c(src) & 0xff; goto CONV_END;
-conv_xx12_x210: as_u32(dst) = sx24((uint32_t)bswap_16(as_u16c(src)) << 8); goto CONV_END;
-conv_xx12_012x: as_u32(dst) = sx24s((uint32_t)as_u16c(src) << 8); goto CONV_END;
-conv_xx12_2100: as_u32(dst) = (uint32_t)bswap_16(as_u16c(src)) << 16; goto CONV_END;
-conv_xx12_0012: as_u32(dst) = (uint32_t)as_u16c(src); goto CONV_END; 
-conv_xx12_xxxA: as_u8(dst) = (as_u16c(src) ^ 0x80) & 0xff; goto CONV_END;
-conv_xx12_xxA1: as_u16(dst) = bswap_16(as_u16c(src) ^ 0x80); goto CONV_END;
-conv_xx12_xx1A: as_u16(dst) = as_u16c(src) ^ 0x80; goto CONV_END;
-conv_xx12_xA10: as_u32(dst) = sx24((uint32_t)bswap_16(as_u16c(src) ^ 0x80) << 8); goto CONV_END;
-conv_xx12_01Ax: as_u32(dst) = sx24s((uint32_t)(as_u16c(src) ^ 0x80) << 8); goto CONV_END;
-conv_xx12_A100: as_u32(dst) = (uint32_t)bswap_16(as_u16c(src) ^ 0x80) << 16; goto CONV_END;
-conv_xx12_001A: as_u32(dst) = (uint32_t)(as_u16c(src) ^ 0x80); goto CONV_END;
-conv_x123_xxx1: as_u8(dst) = as_u32c(src) >> 16; goto CONV_END;
-conv_x123_xx12: as_u16(dst) = as_u32c(src) >> 8; goto CONV_END;
-conv_x123_xx21: as_u16(dst) = bswap_16(as_u32c(src) >> 8); goto CONV_END;
-conv_x123_x123: as_u32(dst) = sx24(as_u32c(src)); goto CONV_END;
-conv_x123_321x: as_u32(dst) = sx24s(bswap_32(as_u32c(src))); goto CONV_END;
-conv_x123_1230: as_u32(dst) = as_u32c(src) << 8; goto CONV_END;
-conv_x123_0321: as_u32(dst) = bswap_32(as_u32c(src)) >> 8; goto CONV_END;
-conv_x123_xxx9: as_u8(dst) = (as_u32c(src) >> 16) ^ 0x80; goto CONV_END;
-conv_x123_xx92: as_u16(dst) = (as_u32c(src) >> 8) ^ 0x8000; goto CONV_END;
-conv_x123_xx29: as_u16(dst) = bswap_16(as_u32c(src) >> 8) ^ 0x80; goto CONV_END;
-conv_x123_x923: as_u32(dst) = sx24(as_u32c(src) ^ 0x800000); goto CONV_END;
-conv_x123_329x: as_u32(dst) = sx24s(bswap_32(as_u32c(src)) ^ 0x8000); goto CONV_END;
-conv_x123_9230: as_u32(dst) = (as_u32c(src) ^ 0x800000) << 8; goto CONV_END;
-conv_x123_0329: as_u32(dst) = (bswap_32(as_u32c(src)) >> 8) ^ 0x80; goto CONV_END;
-conv_123x_xxx3: as_u8(dst) = (as_u32c(src) >> 8) & 0xff; goto CONV_END;
-conv_123x_xx32: as_u16(dst) = bswap_16(as_u32c(src) >> 8); goto CONV_END;
-conv_123x_xx23: as_u16(dst) = (as_u32c(src) >> 8) & 0xffff; goto CONV_END;
-conv_123x_x321: as_u32(dst) = sx24(bswap_32(as_u32c(src))); goto CONV_END;
-conv_123x_123x: as_u32(dst) = sx24s(as_u32c(src)); goto CONV_END;
-conv_123x_3210: as_u32(dst) = bswap_32(as_u32c(src)) << 8; goto CONV_END;
-conv_123x_0123: as_u32(dst) = as_u32c(src) >> 8; goto CONV_END;
-conv_123x_xxxB: as_u8(dst) = ((as_u32c(src) >> 8) & 0xff) ^ 0x80; goto CONV_END;
-conv_123x_xxB2: as_u16(dst) = bswap_16((as_u32c(src) >> 8) ^ 0x80); goto CONV_END;
-conv_123x_xx2B: as_u16(dst) = ((as_u32c(src) >> 8) & 0xffff) ^ 0x80; goto CONV_END;
-conv_123x_xB21: as_u32(dst) = sx24(bswap_32(as_u32c(src)) ^ 0x800000); goto CONV_END;
-conv_123x_12Bx: as_u32(dst) = sx24s(as_u32c(src) ^ 0x8000); goto CONV_END;
-conv_123x_B210: as_u32(dst) = bswap_32(as_u32c(src) ^ 0x8000) << 8; goto CONV_END;
-conv_123x_012B: as_u32(dst) = (as_u32c(src) >> 8) ^ 0x80; goto CONV_END;
-conv_1234_xxx1: as_u8(dst) = as_u32c(src) >> 24; goto CONV_END;
-conv_1234_xx12: as_u16(dst) = as_u32c(src) >> 16; goto CONV_END;
-conv_1234_xx21: as_u16(dst) = bswap_16(as_u32c(src) >> 16); goto CONV_END;
-conv_1234_x123: as_u32(dst) = sx24(as_u32c(src) >> 8); goto CONV_END;
-conv_1234_321x: as_u32(dst) = sx24s(bswap_32(as_u32c(src)) << 8); goto CONV_END;
-conv_1234_1234: as_u32(dst) = as_u32c(src); goto CONV_END;
-conv_1234_4321: as_u32(dst) = bswap_32(as_u32c(src)); goto CONV_END;
-conv_1234_xxx9: as_u8(dst) = (as_u32c(src) >> 24) ^ 0x80; goto CONV_END;
-conv_1234_xx92: as_u16(dst) = (as_u32c(src) >> 16) ^ 0x8000; goto CONV_END;
-conv_1234_xx29: as_u16(dst) = bswap_16(as_u32c(src) >> 16) ^ 0x80; goto CONV_END;
-conv_1234_x923: as_u32(dst) = sx24((as_u32c(src) >> 8) ^ 0x800000); goto CONV_END;
-conv_1234_329x: as_u32(dst) = sx24s((bswap_32(as_u32c(src)) ^ 0x80) << 8); goto CONV_END;
-conv_1234_9234: as_u32(dst) = as_u32c(src) ^ 0x80000000; goto CONV_END;
-conv_1234_4329: as_u32(dst) = bswap_32(as_u32c(src)) ^ 0x80; goto CONV_END;
-conv_1234_xxx4: as_u8(dst) = as_u32c(src) & 0xff; goto CONV_END;
-conv_1234_xx43: as_u16(dst) = bswap_16(as_u32c(src)); goto CONV_END;
-conv_1234_xx34: as_u16(dst) = as_u32c(src) & 0xffff; goto CONV_END;
-conv_1234_x432: as_u32(dst) = sx24(bswap_32(as_u32c(src)) >> 8); goto CONV_END;
-conv_1234_234x: as_u32(dst) = sx24s(as_u32c(src) << 8); goto CONV_END;
-conv_1234_xxxC: as_u8(dst) = (as_u32c(src) & 0xff) ^ 0x80; goto CONV_END;
-conv_1234_xxC3: as_u16(dst) = bswap_16(as_u32c(src) ^ 0x80); goto CONV_END;
-conv_1234_xx3C: as_u16(dst) = (as_u32c(src) & 0xffff) ^ 0x80; goto CONV_END;
-conv_1234_xC32: as_u32(dst) = sx24((bswap_32(as_u32c(src)) >> 8) ^ 0x800000); goto CONV_END;
-conv_1234_23Cx: as_u32(dst) = sx24s((as_u32c(src) ^ 0x80) << 8); goto CONV_END;
-conv_1234_C321: as_u32(dst) = bswap_32(as_u32c(src) ^ 0x80); goto CONV_END;
-conv_1234_123C: as_u32(dst) = as_u32c(src) ^ 0x80; goto CONV_END;
+static inline void conv(char *dst, const char *src, unsigned int idx) {
+	switch (idx) {
+	case   0: /*  8h ->  8h */
+	case   1: /*  8h ->  8s */
+	case  16: /*  8s ->  8h */
+	case  17: /*  8s ->  8s */ as_u8(dst) = as_u8c(src); break;
+	case   2: /*  8h -> 16h */
+	case  18: /*  8s -> 16h */ as_u16(dst) = (uint16_t)as_u8c(src) << 8; break;
+	case   3: /*  8h -> 16s */
+	case  19: /*  8s -> 16s */ as_u16(dst) = (uint16_t)as_u8c(src); break;
+	case   4: /*  8h -> 24h */
+	case  20: /*  8s -> 24h */ as_u32(dst) = sx24((uint32_t)as_u8c(src) << 16); break;
+	case   5: /*  8h -> 24s */
+	case  21: /*  8s -> 24s */ as_u32(dst) = sx24s((uint32_t)as_u8c(src) << 8); break;
+	case   6: /*  8h -> 32h */
+	case  22: /*  8s -> 32h */ as_u32(dst) = (uint32_t)as_u8c(src) << 24; break;
+	case   7: /*  8h -> 32s */
+	case  23: /*  8s -> 32s */ as_u32(dst) = (uint32_t)as_u8c(src); break;
+	case   8: /*  8h ^>  8h */
+	case   9: /*  8h ^>  8s */
+	case  24: /*  8s ^>  8h */
+	case  25: /*  8s ^>  8s */ as_u8(dst) = as_u8c(src) ^ 0x80; break;
+	case  10: /*  8h ^> 16h */
+	case  26: /*  8s ^> 16h */ as_u16(dst) = (uint16_t)(as_u8c(src) ^ 0x80) << 8; break;
+	case  11: /*  8h ^> 16s */
+	case  27: /*  8s ^> 16s */ as_u16(dst) = (uint16_t)(as_u8c(src) ^ 0x80); break;
+	case  12: /*  8h ^> 24h */
+	case  28: /*  8s ^> 24h */ as_u32(dst) = sx24((uint32_t)(as_u8c(src) ^ 0x80) << 16); break;
+	case  13: /*  8h ^> 24s */
+	case  29: /*  8s ^> 24s */ as_u32(dst) = sx24s((uint32_t)(as_u8c(src) ^ 0x80) << 8); break;
+	case  14: /*  8h ^> 32h */
+	case  30: /*  8s ^> 32h */ as_u32(dst) = (uint32_t)(as_u8c(src) ^ 0x80) << 24; break;
+	case  15: /*  8h ^> 32s */
+	case  31: /*  8s ^> 32s */ as_u32(dst) = (uint32_t)(as_u8c(src) ^ 0x80); break;
+	case  32: /* 16h ->  8h */
+	case  33: /* 16h ->  8s */ as_u8(dst) = as_u16c(src) >> 8; break;
+	case  34: /* 16h -> 16h */ as_u16(dst) = as_u16c(src); break;
+	case  35: /* 16h -> 16s */ as_u16(dst) = bswap_16(as_u16c(src)); break;
+	case  36: /* 16h -> 24h */ as_u32(dst) = sx24((uint32_t)as_u16c(src) << 8); break;
+	case  37: /* 16h -> 24s */ as_u32(dst) = sx24s((uint32_t)bswap_16(as_u16c(src)) << 8); break;
+	case  38: /* 16h -> 32h */ as_u32(dst) = (uint32_t)as_u16c(src) << 16; break;
+	case  39: /* 16h -> 32s */ as_u32(dst) = (uint32_t)bswap_16(as_u16c(src)); break;
+	case  40: /* 16h ^>  8h */
+	case  41: /* 16h ^>  8s */ as_u8(dst) = (as_u16c(src) >> 8) ^ 0x80; break;
+	case  42: /* 16h ^> 16h */
+	case  51: /* 16s -> 16s */ as_u16(dst) = as_u16c(src) ^ 0x8000; break;
+	case  43: /* 16h ^> 16s */
+	case  50: /* 16s -> 16h */ as_u16(dst) = bswap_16(as_u16c(src)) ^ 0x80; break;
+	case  44: /* 16h ^> 24h */ as_u32(dst) = sx24((uint32_t)(as_u16c(src) ^ 0x8000) << 8); break;
+	case  45: /* 16h ^> 24s */ as_u32(dst) = sx24s((uint32_t)(bswap_16(as_u16c(src)) ^ 0x80) << 8); break;
+	case  46: /* 16h ^> 32h */ as_u32(dst) = (uint32_t)(as_u16c(src) ^ 0x8000) << 16; break;
+	case  47: /* 16h ^> 32s */ as_u32(dst) = (uint32_t)(bswap_16(as_u16c(src)) ^ 0x80); break;
+	case  48: /* 16s ->  8h */
+	case  49: /* 16s ->  8s */ as_u8(dst) = as_u16c(src) & 0xff; break;
+	case  52: /* 16s -> 24h */ as_u32(dst) = sx24((uint32_t)bswap_16(as_u16c(src)) << 8); break;
+	case  53: /* 16s -> 24s */ as_u32(dst) = sx24s((uint32_t)as_u16c(src) << 8); break;
+	case  54: /* 16s -> 32h */ as_u32(dst) = (uint32_t)bswap_16(as_u16c(src)) << 16; break;
+	case  55: /* 16s -> 32s */ as_u32(dst) = (uint32_t)as_u16c(src); break;
+	case  56: /* 16s ^>  8h */
+	case  57: /* 16s ^>  8s */ as_u8(dst) = (as_u16c(src) ^ 0x80) & 0xff; break;
+	case  58: /* 16s ^> 16h */ as_u16(dst) = bswap_16(as_u16c(src) ^ 0x80); break;
+	case  59: /* 16s ^> 16s */ as_u16(dst) = as_u16c(src) ^ 0x80; break;
+	case  60: /* 16s ^> 24h */ as_u32(dst) = sx24((uint32_t)bswap_16(as_u16c(src) ^ 0x80) << 8); break;
+	case  61: /* 16s ^> 24s */ as_u32(dst) = sx24s((uint32_t)(as_u16c(src) ^ 0x80) << 8); break;
+	case  62: /* 16s ^> 32h */ as_u32(dst) = (uint32_t)bswap_16(as_u16c(src) ^ 0x80) << 16; break;
+	case  63: /* 16s ^> 32s */ as_u32(dst) = (uint32_t)(as_u16c(src) ^ 0x80); break;
+	case  64: /* 24h ->  8h */
+	case  65: /* 24h ->  8s */ as_u8(dst) = as_u32c(src) >> 16; break;
+	case  66: /* 24h -> 16h */ as_u16(dst) = as_u32c(src) >> 8; break;
+	case  67: /* 24h -> 16s */ as_u16(dst) = bswap_16(as_u32c(src) >> 8); break;
+	case  68: /* 24h -> 24h */ as_u32(dst) = sx24(as_u32c(src)); break;
+	case  69: /* 24h -> 24s */ as_u32(dst) = sx24s(bswap_32(as_u32c(src))); break;
+	case  70: /* 24h -> 32h */ as_u32(dst) = as_u32c(src) << 8; break;
+	case  71: /* 24h -> 32s */ as_u32(dst) = bswap_32(as_u32c(src)) >> 8; break;
+	case  72: /* 24h ^>  8h */
+	case  73: /* 24h ^>  8s */ as_u8(dst) = (as_u32c(src) >> 16) ^ 0x80; break;
+	case  74: /* 24h ^> 16h */ as_u16(dst) = (as_u32c(src) >> 8) ^ 0x8000; break;
+	case  75: /* 24h ^> 16s */ as_u16(dst) = bswap_16(as_u32c(src) >> 8) ^ 0x80; break;
+	case  76: /* 24h ^> 24h */ as_u32(dst) = sx24(as_u32c(src) ^ 0x800000); break;
+	case  77: /* 24h ^> 24s */ as_u32(dst) = sx24s(bswap_32(as_u32c(src)) ^ 0x8000); break;
+	case  78: /* 24h ^> 32h */ as_u32(dst) = (as_u32c(src) ^ 0x800000) << 8; break;
+	case  79: /* 24h ^> 32s */ as_u32(dst) = (bswap_32(as_u32c(src)) >> 8) ^ 0x80; break;
+	case  80: /* 24s ->  8h */
+	case  81: /* 24s ->  8s */ as_u8(dst) = (as_u32c(src) >> 8) & 0xff; break;
+	case  82: /* 24s -> 16h */ as_u16(dst) = bswap_16(as_u32c(src) >> 8); break;
+	case  83: /* 24s -> 16s */ as_u16(dst) = (as_u32c(src) >> 8) & 0xffff; break;
+	case  84: /* 24s -> 24h */ as_u32(dst) = sx24(bswap_32(as_u32c(src))); break;
+	case  85: /* 24s -> 24s */ as_u32(dst) = sx24s(as_u32c(src)); break;
+	case  86: /* 24s -> 32h */ as_u32(dst) = bswap_32(as_u32c(src)) << 8; break;
+	case  87: /* 24s -> 32s */ as_u32(dst) = as_u32c(src) >> 8; break;
+	case  88: /* 24s ^>  8h */
+	case  89: /* 24s ^>  8s */ as_u8(dst) = ((as_u32c(src) >> 8) & 0xff) ^ 0x80; break;
+	case  90: /* 24s ^> 16h */ as_u16(dst) = bswap_16((as_u32c(src) >> 8) ^ 0x80); break;
+	case  91: /* 24s ^> 16s */ as_u16(dst) = ((as_u32c(src) >> 8) & 0xffff) ^ 0x80; break;
+	case  92: /* 24s ^> 24h */ as_u32(dst) = sx24(bswap_32(as_u32c(src)) ^ 0x800000); break;
+	case  93: /* 24s ^> 24s */ as_u32(dst) = sx24s(as_u32c(src) ^ 0x8000); break;
+	case  94: /* 24s ^> 32h */ as_u32(dst) = bswap_32(as_u32c(src) ^ 0x8000) << 8; break;
+	case  95: /* 24s ^> 32s */ as_u32(dst) = (as_u32c(src) >> 8) ^ 0x80; break;
+	case  96: /* 32h ->  8h */
+	case  97: /* 32h ->  8s */ as_u8(dst) = as_u32c(src) >> 24; break;
+	case  98: /* 32h -> 16h */ as_u16(dst) = as_u32c(src) >> 16; break;
+	case  99: /* 32h -> 16s */ as_u16(dst) = bswap_16(as_u32c(src) >> 16); break;
+	case 100: /* 32h -> 24h */ as_u32(dst) = sx24(as_u32c(src) >> 8); break;
+	case 101: /* 32h -> 24s */ as_u32(dst) = sx24s(bswap_32(as_u32c(src)) << 8); break;
+	case 102: /* 32h -> 32h */
+	case 119: /* 32s -> 32s */ as_u32(dst) = as_u32c(src); break;
+	case 103: /* 32h -> 32s */
+	case 118: /* 32s -> 32h */ as_u32(dst) = bswap_32(as_u32c(src)); break;
+	case 104: /* 32h ^>  8h */
+	case 105: /* 32h ^>  8s */ as_u8(dst) = (as_u32c(src) >> 24) ^ 0x80; break;
+	case 106: /* 32h ^> 16h */ as_u16(dst) = (as_u32c(src) >> 16) ^ 0x8000; break;
+	case 107: /* 32h ^> 16s */ as_u16(dst) = bswap_16(as_u32c(src) >> 16) ^ 0x80; break;
+	case 108: /* 32h ^> 24h */ as_u32(dst) = sx24((as_u32c(src) >> 8) ^ 0x800000); break;
+	case 109: /* 32h ^> 24s */ as_u32(dst) = sx24s((bswap_32(as_u32c(src)) ^ 0x80) << 8); break;
+	case 110: /* 32h ^> 32h */ as_u32(dst) = as_u32c(src) ^ 0x80000000; break;
+	case 111: /* 32h ^> 32s */ as_u32(dst) = bswap_32(as_u32c(src)) ^ 0x80; break;
+	case 112: /* 32s ->  8h */
+	case 113: /* 32s ->  8s */ as_u8(dst) = as_u32c(src) & 0xff; break;
+	case 114: /* 32s -> 16h */ as_u16(dst) = bswap_16(as_u32c(src)); break;
+	case 115: /* 32s -> 16s */ as_u16(dst) = as_u32c(src) & 0xffff; break;
+	case 116: /* 32s -> 24h */ as_u32(dst) = sx24(bswap_32(as_u32c(src)) >> 8); break;
+	case 117: /* 32s -> 24s */ as_u32(dst) = sx24s(as_u32c(src) << 8); break;
+	case 120: /* 32s ^>  8h */
+	case 121: /* 32s ^>  8s */ as_u8(dst) = (as_u32c(src) & 0xff) ^ 0x80; break;
+	case 122: /* 32s ^> 16h */ as_u16(dst) = bswap_16(as_u32c(src) ^ 0x80); break;
+	case 123: /* 32s ^> 16s */ as_u16(dst) = (as_u32c(src) & 0xffff) ^ 0x80; break;
+	case 124: /* 32s ^> 24h */ as_u32(dst) = sx24((bswap_32(as_u32c(src)) >> 8) ^ 0x800000); break;
+	case 125: /* 32s ^> 24s */ as_u32(dst) = sx24s((as_u32c(src) ^ 0x80) << 8); break;
+	case 126: /* 32s ^> 32h */ as_u32(dst) = bswap_32(as_u32c(src) ^ 0x80); break;
+	case 127: /* 32s ^> 32s */ as_u32(dst) = as_u32c(src) ^ 0x80; break;
+	}
 }
-#endif
 
-#ifdef GET16_LABELS
-/* src_wid src_endswap sign_toggle */
-static void *const get16_labels[5 * 2 * 2 + 4 * 3] = {
-	&&get16_1_10,	 /*  8h -> 16h */
-	&&get16_1_90,	 /*  8h ^> 16h */
-	&&get16_1_10,	 /*  8s -> 16h */
-	&&get16_1_90,	 /*  8s ^> 16h */
-	&&get16_12_12,	 /* 16h -> 16h */
-	&&get16_12_92,	 /* 16h ^> 16h */
-	&&get16_12_21,	 /* 16s -> 16h */
-	&&get16_12_A1,	 /* 16s ^> 16h */
+static inline uint16_t get16(const char *src, unsigned int idx) {
+	switch(idx) {
+	case  0: /*  8h -> 16h */
+	case  2: /*  8s -> 16h */ return (uint16_t)as_u8c(src) << 8;
+	case  1: /*  8h ^> 16h */
+	case  3: /*  8s ^> 16h */ return (uint16_t)(as_u8c(src) ^ 0x80) << 8;
+	case  4: /* 16h -> 16h */ return as_u16c(src);
+	case  5: /* 16h ^> 16h */ return as_u16c(src) ^ 0x8000;
+	case  6: /* 16s -> 16h */ return bswap_16(as_u16c(src));
+	case  7: /* 16s ^> 16h */ return bswap_16(as_u16c(src) ^ 0x80);
 	/* 4 byte formats */
-	&&get16_0123_12, /* 24h -> 16h */
-	&&get16_0123_92, /* 24h ^> 16h */
-	&&get16_1230_32, /* 24s -> 16h */
-	&&get16_1230_B2, /* 24s ^> 16h */
-	&&get16_1234_12, /* 32h -> 16h */
-	&&get16_1234_92, /* 32h ^> 16h */
-	&&get16_1234_43, /* 32s -> 16h */
-	&&get16_1234_C3, /* 32s ^> 16h */
-	&&get16_0123_12_20, /* 20h -> 16h */
-	&&get16_0123_92_20, /* 20h ^> 16h */
-	&&get16_1230_32_20, /* 20s -> 16h */
-	&&get16_1230_B2_20, /* 20s ^> 16h */
+	case  8: /* 24h -> 16h */ return as_u32c(src) >> 8;
+	case  9: /* 24h ^> 16h */ return (as_u32c(src) >> 8) ^ 0x8000;
+	case 10: /* 24s -> 16h */ return bswap_16(as_u32c(src) >> 8);
+	case 11: /* 24s ^> 16h */ return bswap_16((as_u32c(src) >> 8) ^ 0x80);
+	case 12: /* 32h -> 16h */ return as_u32c(src) >> 16;
+	case 13: /* 32h ^> 16h */ return (as_u32c(src) >> 16) ^ 0x8000;
+	case 14: /* 32s -> 16h */ return bswap_16(as_u32c(src));
+	case 15: /* 32s ^> 16h */ return bswap_16(as_u32c(src) ^ 0x80);
+	case 16: /* 20h -> 16h */ return as_u32c(src) >> 4;
+	case 17: /* 20h ^> 16h */ return (as_u32c(src) >> 4) ^ 0x8000;
+	case 18: /* 20s -> 16h */ return bswap_32(as_u32c(src)) >> 4;
+	case 19: /* 20s ^> 16h */ return (bswap_32(as_u32c(src)) >> 4) ^ 0x8000;
 	/* 3bytes format */
-	&&get16_123_12,	 /* 24h -> 16h */
-	&&get16_123_92,	 /* 24h ^> 16h */
-	&&get16_123_32,	 /* 24s -> 16h */
-	&&get16_123_B2,	 /* 24s ^> 16h */
-	&&get16_123_12_20,	 /* 20h -> 16h */
-	&&get16_123_92_20,	 /* 20h ^> 16h */
-	&&get16_123_32_20,	 /* 20s -> 16h */
-	&&get16_123_B2_20,	 /* 20s ^> 16h */
-	&&get16_123_12_18,	 /* 18h -> 16h */
-	&&get16_123_92_18,	 /* 18h ^> 16h */
-	&&get16_123_32_18,	 /* 18s -> 16h */
-	&&get16_123_B2_18,	 /* 18s ^> 16h */
-};
-#endif
-
-#ifdef GET16_END
-while(0) {
-get16_1_10: sample = (uint16_t)as_u8c(src) << 8; goto GET16_END;
-get16_1_90: sample = (uint16_t)(as_u8c(src) ^ 0x80) << 8; goto GET16_END;
-get16_12_12: sample = as_u16c(src); goto GET16_END;
-get16_12_92: sample = as_u16c(src) ^ 0x8000; goto GET16_END;
-get16_12_21: sample = bswap_16(as_u16c(src)); goto GET16_END;
-get16_12_A1: sample = bswap_16(as_u16c(src) ^ 0x80); goto GET16_END;
-get16_0123_12: sample = as_u32c(src) >> 8; goto GET16_END;
-get16_0123_92: sample = (as_u32c(src) >> 8) ^ 0x8000; goto GET16_END;
-get16_1230_32: sample = bswap_16(as_u32c(src) >> 8); goto GET16_END;
-get16_1230_B2: sample = bswap_16((as_u32c(src) >> 8) ^ 0x80); goto GET16_END;
-get16_1234_12: sample = as_u32c(src) >> 16; goto GET16_END;
-get16_1234_92: sample = (as_u32c(src) >> 16) ^ 0x8000; goto GET16_END;
-get16_1234_43: sample = bswap_16(as_u32c(src)); goto GET16_END;
-get16_1234_C3: sample = bswap_16(as_u32c(src) ^ 0x80); goto GET16_END;
-get16_0123_12_20: sample = as_u32c(src) >> 4; goto GET16_END;
-get16_0123_92_20: sample = (as_u32c(src) >> 4) ^ 0x8000; goto GET16_END;
-get16_1230_32_20: sample = bswap_32(as_u32c(src)) >> 4; goto GET16_END;
-get16_1230_B2_20: sample = (bswap_32(as_u32c(src)) >> 4) ^ 0x8000; goto GET16_END;
-get16_123_12: sample = _get_triple(src) >> 8; goto GET16_END;
-get16_123_92: sample = (_get_triple(src) >> 8) ^ 0x8000; goto GET16_END;
-get16_123_32: sample = _get_triple_s(src) >> 8; goto GET16_END;
-get16_123_B2: sample = (_get_triple_s(src) >> 8) ^ 0x8000; goto GET16_END;
-get16_123_12_20: sample = _get_triple(src) >> 4; goto GET16_END;
-get16_123_92_20: sample = (_get_triple(src) >> 4) ^ 0x8000; goto GET16_END;
-get16_123_32_20: sample = _get_triple_s(src) >> 4; goto GET16_END;
-get16_123_B2_20: sample = (_get_triple_s(src) >> 4) ^ 0x8000; goto GET16_END;
-get16_123_12_18: sample = _get_triple(src) >> 2; goto GET16_END;
-get16_123_92_18: sample = (_get_triple(src) >> 2) ^ 0x8000; goto GET16_END;
-get16_123_32_18: sample = _get_triple_s(src) >> 2; goto GET16_END;
-get16_123_B2_18: sample = (_get_triple_s(src) >> 2) ^ 0x8000; goto GET16_END;
+	case 20: /* 24h -> 16h */ return _get_triple(src) >> 8;
+	case 21: /* 24h ^> 16h */ return (_get_triple(src) >> 8) ^ 0x8000;
+	case 22: /* 24s -> 16h */ return _get_triple_s(src) >> 8;
+	case 23: /* 24s ^> 16h */ return (_get_triple_s(src) >> 8) ^ 0x8000;
+	case 24: /* 20h -> 16h */ return _get_triple(src) >> 4;
+	case 25: /* 20h ^> 16h */ return (_get_triple(src) >> 4) ^ 0x8000;
+	case 26: /* 20s -> 16h */ return _get_triple_s(src) >> 4;
+	case 27: /* 20s ^> 16h */ return (_get_triple_s(src) >> 4) ^ 0x8000;
+	case 28: /* 18h -> 16h */ return _get_triple(src) >> 2;
+	case 29: /* 18h ^> 16h */ return (_get_triple(src) >> 2) ^ 0x8000;
+	case 30: /* 18s -> 16h */ return _get_triple_s(src) >> 2;
+	case 31: /* 18s ^> 16h */ return (_get_triple_s(src) >> 2) ^ 0x8000;
+	}
 }
-#endif
 
-#ifdef PUT16_LABELS
-/* dst_wid dst_endswap sign_toggle */
-static void *const put16_labels[5 * 2 * 2 + 4 * 3] = {
-	&&put16_12_1,		 /* 16h ->  8h */
-	&&put16_12_9,		 /* 16h ^>  8h */
-	&&put16_12_1,		 /* 16h ->  8s */
-	&&put16_12_9,		 /* 16h ^>  8s */
-	&&put16_12_12,		 /* 16h -> 16h */
-	&&put16_12_92,		 /* 16h ^> 16h */
-	&&put16_12_21,		 /* 16h -> 16s */
-	&&put16_12_29,		 /* 16h ^> 16s */
+static inline void put16(char *dst, int16_t sample, unsigned int idx)
+{
+	switch (idx) {
+	case  0: /* 16h ->  8h */
+	case  2: /* 16h ->  8s */ as_u8(dst) = sample >> 8; break;
+	case  1: /* 16h ^>  8h */
+	case  3: /* 16h ^>  8s */ as_u8(dst) = (sample >> 8) ^ 0x80; break;
+	case  4: /* 16h -> 16h */ as_u16(dst) = sample; break;
+	case  5: /* 16h ^> 16h */ as_u16(dst) = sample ^ 0x8000; break;
+	case  6: /* 16h -> 16s */ as_u16(dst) = bswap_16(sample); break;
+	case  7: /* 16h ^> 16s */ as_u16(dst) = bswap_16(sample) ^ 0x80; break;
 	/* 4 byte formats */
-	&&put16_12_0120,	 /* 16h -> 24h */
-	&&put16_12_0920,	 /* 16h ^> 24h */
-	&&put16_12_0210,	 /* 16h -> 24s */
-	&&put16_12_0290,	 /* 16h ^> 24s */
-	&&put16_12_1200,	 /* 16h -> 32h */
-	&&put16_12_9200,	 /* 16h ^> 32h */
-	&&put16_12_0021,	 /* 16h -> 32s */
-	&&put16_12_0029,	 /* 16h ^> 32s */
-	&&put16_12_0120_20,	 /* 16h -> 20h */
-	&&put16_12_0920_20,	 /* 16h ^> 20h */
-	&&put16_12_0210_20,	 /* 16h -> 20s */
-	&&put16_12_0290_20,	 /* 16h ^> 20s */
+	case  8: /* 16h -> 24h */ as_u32(dst) = sx24((uint32_t)sample << 8); break;
+	case  9: /* 16h ^> 24h */ as_u32(dst) = sx24((uint32_t)(sample ^ 0x8000) << 8); break;
+	case 10: /* 16h -> 24s */ as_u32(dst) = sx24s((uint32_t)bswap_16(sample) << 8); break;
+	case 11: /* 16h ^> 24s */ as_u32(dst) = sx24s((uint32_t)(bswap_16(sample) ^ 0x80) << 8); break;
+	case 12: /* 16h -> 32h */ as_u32(dst) = (uint32_t)sample << 16; break;
+	case 13: /* 16h ^> 32h */ as_u32(dst) = (uint32_t)(sample ^ 0x8000) << 16; break;
+	case 14: /* 16h -> 32s */ as_u32(dst) = (uint32_t)bswap_16(sample); break;
+	case 15: /* 16h ^> 32s */ as_u32(dst) = (uint32_t)bswap_16(sample) ^ 0x80; break;
+	case 16: /* 16h -> 20h */ as_u32(dst) = sx20((uint32_t)sample << 4); break;
+	case 17: /* 16h ^> 20h */ as_u32(dst) = sx20((uint32_t)(sample ^ 0x8000) << 4); break;
+	case 18: /* 16h -> 20s */ as_u32(dst) = bswap_32(sx20((uint32_t)sample << 4)); break;
+	case 19: /* 16h ^> 20s */ as_u32(dst) = bswap_32(sx20((uint32_t)(sample ^ 0x8000) << 4)); break;
 	/* 3bytes format */
-	&&put16_12_120,		 /* 16h -> 24h */
-	&&put16_12_920,		 /* 16h ^> 24h */
-	&&put16_12_021,		 /* 16h -> 24s */
-	&&put16_12_029,		 /* 16h ^> 24s */
-	&&put16_12_120_20,	 /* 16h -> 20h */
-	&&put16_12_920_20,	 /* 16h ^> 20h */
-	&&put16_12_021_20,	 /* 16h -> 20s */
-	&&put16_12_029_20,	 /* 16h ^> 20s */
-	&&put16_12_120_18,	 /* 16h -> 18h */
-	&&put16_12_920_18,	 /* 16h ^> 18h */
-	&&put16_12_021_18,	 /* 16h -> 18s */
-	&&put16_12_029_18,	 /* 16h ^> 18s */
-};
-#endif
-
-#ifdef PUT16_END
-while (0) {
-put16_12_1: as_u8(dst) = sample >> 8; goto PUT16_END;
-put16_12_9: as_u8(dst) = (sample >> 8) ^ 0x80; goto PUT16_END;
-put16_12_12: as_u16(dst) = sample; goto PUT16_END;
-put16_12_92: as_u16(dst) = sample ^ 0x8000; goto PUT16_END;
-put16_12_21: as_u16(dst) = bswap_16(sample); goto PUT16_END;
-put16_12_29: as_u16(dst) = bswap_16(sample) ^ 0x80; goto PUT16_END;
-put16_12_0120: as_u32(dst) = sx24((uint32_t)sample << 8); goto PUT16_END;
-put16_12_0920: as_u32(dst) = sx24((uint32_t)(sample ^ 0x8000) << 8); goto PUT16_END;
-put16_12_0210: as_u32(dst) = sx24s((uint32_t)bswap_16(sample) << 8); goto PUT16_END;
-put16_12_0290: as_u32(dst) = sx24s((uint32_t)(bswap_16(sample) ^ 0x80) << 8); goto PUT16_END;
-put16_12_1200: as_u32(dst) = (uint32_t)sample << 16; goto PUT16_END;
-put16_12_9200: as_u32(dst) = (uint32_t)(sample ^ 0x8000) << 16; goto PUT16_END;
-put16_12_0021: as_u32(dst) = (uint32_t)bswap_16(sample); goto PUT16_END;
-put16_12_0029: as_u32(dst) = (uint32_t)bswap_16(sample) ^ 0x80; goto PUT16_END;
-put16_12_0120_20: as_u32(dst) = sx20((uint32_t)sample << 4); goto PUT16_END;
-put16_12_0920_20: as_u32(dst) = sx20((uint32_t)(sample ^ 0x8000) << 4); goto PUT16_END;
-put16_12_0210_20: as_u32(dst) = bswap_32(sx20((uint32_t)sample << 4)); goto PUT16_END;
-put16_12_0290_20: as_u32(dst) = bswap_32(sx20((uint32_t)(sample ^ 0x8000) << 4)); goto PUT16_END;
-put16_12_120: _put_triple(dst, (uint32_t)sample << 8); goto PUT16_END;
-put16_12_920: _put_triple(dst, (uint32_t)(sample ^ 0x8000) << 8); goto PUT16_END;
-put16_12_021: _put_triple_s(dst, (uint32_t)sample << 8); goto PUT16_END;
-put16_12_029: _put_triple_s(dst, (uint32_t)(sample ^ 0x8000) << 8); goto PUT16_END;
-put16_12_120_20: _put_triple(dst, (uint32_t)sample << 4); goto PUT16_END;
-put16_12_920_20: _put_triple(dst, (uint32_t)(sample ^ 0x8000) << 4); goto PUT16_END;
-put16_12_021_20: _put_triple_s(dst, (uint32_t)sample << 4); goto PUT16_END;
-put16_12_029_20: _put_triple_s(dst, (uint32_t)(sample ^ 0x8000) << 4); goto PUT16_END;
-put16_12_120_18: _put_triple(dst, (uint32_t)sample << 2); goto PUT16_END;
-put16_12_920_18: _put_triple(dst, (uint32_t)(sample ^ 0x8000) << 2); goto PUT16_END;
-put16_12_021_18: _put_triple_s(dst, (uint32_t)sample << 2); goto PUT16_END;
-put16_12_029_18: _put_triple_s(dst, (uint32_t)(sample ^ 0x8000) << 2); goto PUT16_END;
+	case 20: /* 16h -> 24h */ _put_triple(dst, (uint32_t)sample << 8); break;
+	case 21: /* 16h ^> 24h */ _put_triple(dst, (uint32_t)(sample ^ 0x8000) << 8); break;
+	case 22: /* 16h -> 24s */ _put_triple_s(dst, (uint32_t)sample << 8); break;
+	case 23: /* 16h ^> 24s */ _put_triple_s(dst, (uint32_t)(sample ^ 0x8000) << 8); break;
+	case 24: /* 16h -> 20h */ _put_triple(dst, (uint32_t)sample << 4); break;
+	case 25: /* 16h ^> 20h */ _put_triple(dst, (uint32_t)(sample ^ 0x8000) << 4); break;
+	case 26: /* 16h -> 20s */ _put_triple_s(dst, (uint32_t)sample << 4); break;
+	case 27: /* 16h ^> 20s */ _put_triple_s(dst, (uint32_t)(sample ^ 0x8000) << 4); break;
+	case 28: /* 16h -> 18h */ _put_triple(dst, (uint32_t)sample << 2); break;
+	case 29: /* 16h ^> 18h */ _put_triple(dst, (uint32_t)(sample ^ 0x8000) << 2); break;
+	case 30: /* 16h -> 18s */ _put_triple_s(dst, (uint32_t)sample << 2); break;
+	case 31: /* 16h ^> 18s */ _put_triple_s(dst, (uint32_t)(sample ^ 0x8000) << 2); break;
+	}
 }
-#endif
 
-#ifdef CONV24_LABELS
-#define GET32_LABELS
-#define PUT32_LABELS
-#endif
-
-#ifdef GET32_LABELS
-/* src_wid src_endswap sign_toggle */
-static void *const get32_labels[5 * 2 * 2 + 4 * 3] = {
-	&&get32_1_1000,	 	 /*  8h -> 32h */
-	&&get32_1_9000,	 	 /*  8h ^> 32h */
-	&&get32_1_1000,		 /*  8s -> 32h */
-	&&get32_1_9000,		 /*  8s ^> 32h */
-	&&get32_12_1200,	 /* 16h -> 32h */
-	&&get32_12_9200,	 /* 16h ^> 32h */
-	&&get32_12_2100,	 /* 16s -> 32h */
-	&&get32_12_A100,	 /* 16s ^> 32h */
+static inline int32_t get32(const char *src, unsigned int idx)
+{
+	switch (idx) {
+	case  0: /*  8h -> 32h */
+	case  2: /*  8s -> 32h */ return (uint32_t)as_u8c(src) << 24;
+	case  1: /*  8h ^> 32h */
+	case  3: /*  8s ^> 32h */ return (uint32_t)(as_u8c(src) ^ 0x80) << 24;
+	case  4: /* 16h -> 32h */ return (uint32_t)as_u16c(src) << 16;
+	case  5: /* 16h ^> 32h */ return (uint32_t)(as_u16c(src) ^ 0x8000) << 16;
+	case  6: /* 16s -> 32h */ return (uint32_t)bswap_16(as_u16c(src)) << 16;
+	case  7: /* 16s ^> 32h */ return (uint32_t)bswap_16(as_u16c(src) ^ 0x80) << 16;
 	/* 4 byte formats */
-	&&get32_0123_1230,	 /* 24h -> 32h */
-	&&get32_0123_9230,	 /* 24h ^> 32h */
-	&&get32_1230_3210,	 /* 24s -> 32h */
-	&&get32_1230_B210,	 /* 24s ^> 32h */
-	&&get32_1234_1234,	 /* 32h -> 32h */
-	&&get32_1234_9234,	 /* 32h ^> 32h */
-	&&get32_1234_4321,	 /* 32s -> 32h */
-	&&get32_1234_C321,	 /* 32s ^> 32h */
-	&&get32_0123_1230_20,	 /* 20h -> 32h */
-	&&get32_0123_9230_20,	 /* 20h ^> 32h */
-	&&get32_1230_3210_20,	 /* 20s -> 32h */
-	&&get32_1230_B210_20,	 /* 20s ^> 32h */
+	case  8: /* 24h -> 32h */ return as_u32c(src) << 8;
+	case  9: /* 24h ^> 32h */ return (as_u32c(src) << 8) ^ 0x80000000;
+	case 10: /* 24s -> 32h */ return bswap_32(as_u32c(src) >> 8);
+	case 11: /* 24s ^> 32h */ return bswap_32((as_u32c(src) >> 8) ^ 0x80);
+	case 12: /* 32h -> 32h */ return as_u32c(src);
+	case 13: /* 32h ^> 32h */ return as_u32c(src) ^ 0x80000000;
+	case 14: /* 32s -> 32h */ return bswap_32(as_u32c(src));
+	case 15: /* 32s ^> 32h */ return bswap_32(as_u32c(src) ^ 0x80);
+	case 16: /* 20h -> 32h */ return as_u32c(src) << 12;
+	case 17: /* 20h ^> 32h */ return (as_u32c(src) << 12) ^ 0x80000000;
+	case 18: /* 20s -> 32h */ return bswap_32(as_u32c(src)) << 12;
+	case 19: /* 20s ^> 32h */ return (bswap_32(as_u32c(src)) << 12) ^ 0x80000000;
 	/* 3bytes format */
-	&&get32_123_1230,	 /* 24h -> 32h */
-	&&get32_123_9230,	 /* 24h ^> 32h */
-	&&get32_123_3210,	 /* 24s -> 32h */
-	&&get32_123_B210,	 /* 24s ^> 32h */
-	&&get32_123_1230_20,	 /* 20h -> 32h */
-	&&get32_123_9230_20,	 /* 20h ^> 32h */
-	&&get32_123_3210_20,	 /* 20s -> 32h */
-	&&get32_123_B210_20,	 /* 20s ^> 32h */
-	&&get32_123_1230_18,	 /* 18h -> 32h */
-	&&get32_123_9230_18,	 /* 18h ^> 32h */
-	&&get32_123_3210_18,	 /* 18s -> 32h */
-	&&get32_123_B210_18,	 /* 18s ^> 32h */
-};
-#endif
-
-#ifdef CONV24_END
-#define GET32_END __conv24_get
-#endif
-
-#ifdef GET32_END
-while (0) {
-get32_1_1000: sample = (uint32_t)as_u8c(src) << 24; goto GET32_END;
-get32_1_9000: sample = (uint32_t)(as_u8c(src) ^ 0x80) << 24; goto GET32_END;
-get32_12_1200: sample = (uint32_t)as_u16c(src) << 16; goto GET32_END;
-get32_12_9200: sample = (uint32_t)(as_u16c(src) ^ 0x8000) << 16; goto GET32_END;
-get32_12_2100: sample = (uint32_t)bswap_16(as_u16c(src)) << 16; goto GET32_END;
-get32_12_A100: sample = (uint32_t)bswap_16(as_u16c(src) ^ 0x80) << 16; goto GET32_END;
-get32_0123_1230: sample = as_u32c(src) << 8; goto GET32_END;
-get32_0123_9230: sample = (as_u32c(src) << 8) ^ 0x80000000; goto GET32_END;
-get32_1230_3210: sample = bswap_32(as_u32c(src) >> 8); goto GET32_END;
-get32_1230_B210: sample = bswap_32((as_u32c(src) >> 8) ^ 0x80); goto GET32_END;
-get32_1234_1234: sample = as_u32c(src); goto GET32_END;
-get32_1234_9234: sample = as_u32c(src) ^ 0x80000000; goto GET32_END;
-get32_1234_4321: sample = bswap_32(as_u32c(src)); goto GET32_END;
-get32_1234_C321: sample = bswap_32(as_u32c(src) ^ 0x80); goto GET32_END;
-get32_0123_1230_20: sample = as_u32c(src) << 12; goto GET32_END;
-get32_0123_9230_20: sample = (as_u32c(src) << 12) ^ 0x80000000; goto GET32_END;
-get32_1230_3210_20: sample = bswap_32(as_u32c(src)) << 12; goto GET32_END;
-get32_1230_B210_20: sample = (bswap_32(as_u32c(src)) << 12) ^ 0x80000000; goto GET32_END;
-get32_123_1230: sample = _get_triple(src) << 8; goto GET32_END;
-get32_123_9230: sample = (_get_triple(src) << 8) ^ 0x80000000; goto GET32_END;
-get32_123_3210: sample = _get_triple_s(src) << 8; goto GET32_END;
-get32_123_B210: sample = (_get_triple_s(src) << 8) ^ 0x80000000; goto GET32_END;
-get32_123_1230_20: sample = _get_triple(src) << 12; goto GET32_END;
-get32_123_9230_20: sample = (_get_triple(src) << 12) ^ 0x80000000; goto GET32_END;
-get32_123_3210_20: sample = _get_triple_s(src) << 12; goto GET32_END;
-get32_123_B210_20: sample = (_get_triple_s(src) << 12) ^ 0x80000000; goto GET32_END;
-get32_123_1230_18: sample = _get_triple(src) << 14; goto GET32_END;
-get32_123_9230_18: sample = (_get_triple(src) << 14) ^ 0x80000000; goto GET32_END;
-get32_123_3210_18: sample = _get_triple_s(src) << 14; goto GET32_END;
-get32_123_B210_18: sample = (_get_triple_s(src) << 14) ^ 0x80000000; goto GET32_END;
+	case 20: /* 24h -> 32h */ return _get_triple(src) << 8;
+	case 21: /* 24h ^> 32h */ return (_get_triple(src) << 8) ^ 0x80000000;
+	case 22: /* 24s -> 32h */ return _get_triple_s(src) << 8;
+	case 23: /* 24s ^> 32h */ return (_get_triple_s(src) << 8) ^ 0x80000000;
+	case 24: /* 20h -> 32h */ return _get_triple(src) << 12;
+	case 25: /* 20h ^> 32h */ return (_get_triple(src) << 12) ^ 0x80000000;
+	case 26: /* 20s -> 32h */ return _get_triple_s(src) << 12;
+	case 27: /* 20s ^> 32h */ return (_get_triple_s(src) << 12) ^ 0x80000000;
+	case 28: /* 18h -> 32h */ return _get_triple(src) << 14;
+	case 29: /* 18h ^> 32h */ return (_get_triple(src) << 14) ^ 0x80000000;
+	case 30: /* 18s -> 32h */ return _get_triple_s(src) << 14;
+	case 31: /* 18s ^> 32h */ return (_get_triple_s(src) << 14) ^ 0x80000000;
+	}
 }
-#endif
 
-#ifdef CONV24_END
-__conv24_get: goto *put;
-#define PUT32_END CONV24_END
-#endif
-
-#ifdef PUT32_LABELS
-/* dst_wid dst_endswap sign_toggle */
-static void *const put32_labels[5 * 2 * 2 + 4 * 3] = {
-	&&put32_1234_1,	 	 /* 32h ->  8h */
-	&&put32_1234_9,	 	 /* 32h ^>  8h */
-	&&put32_1234_1,	 	 /* 32h ->  8s */
-	&&put32_1234_9,	 	 /* 32h ^>  8s */
-	&&put32_1234_12,	 /* 32h -> 16h */
-	&&put32_1234_92,	 /* 32h ^> 16h */
-	&&put32_1234_21,	 /* 32h -> 16s */
-	&&put32_1234_29,	 /* 32h ^> 16s */
+static inline void put32(char *dst, int32_t sample, unsigned int idx)
+{
+	switch (idx) {
+	case  0: /* 32h ->  8h */
+	case  2: /* 32h ->  8s */ as_u8(dst) = sample >> 24; break;
+	case  1: /* 32h ^>  8h */
+	case  3: /* 32h ^>  8s */ as_u8(dst) = (sample >> 24) ^ 0x80; break;
+	case  4: /* 32h -> 16h */ as_u16(dst) = sample >> 16; break;
+	case  5: /* 32h ^> 16h */ as_u16(dst) = (sample >> 16) ^ 0x8000; break;
+	case  6: /* 32h -> 16s */ as_u16(dst) = bswap_16(sample >> 16); break;
+	case  7: /* 32h ^> 16s */ as_u16(dst) = bswap_16(sample >> 16) ^ 0x80; break;
 	/* 4 byte formats */
-	&&put32_1234_0123,	 /* 32h -> 24h */
-	&&put32_1234_0923,	 /* 32h ^> 24h */
-	&&put32_1234_3210,	 /* 32h -> 24s */
-	&&put32_1234_3290,	 /* 32h ^> 24s */
-	&&put32_1234_1234,	 /* 32h -> 32h */
-	&&put32_1234_9234,	 /* 32h ^> 32h */
-	&&put32_1234_4321,	 /* 32h -> 32s */
-	&&put32_1234_4329,	 /* 32h ^> 32s */
-	&&put32_1234_0123_20,	 /* 32h -> 20h */
-	&&put32_1234_0923_20,	 /* 32h ^> 20h */
-	&&put32_1234_3210_20,	 /* 32h -> 20s */
-	&&put32_1234_3290_20,	 /* 32h ^> 20s */
+	case  8: /* 32h -> 24h */ as_u32(dst) = sx24(sample >> 8); break;
+	case  9: /* 32h ^> 24h */ as_u32(dst) = sx24((sample >> 8) ^ 0x800000); break;
+	case 10: /* 32h -> 24s */ as_u32(dst) = sx24s(bswap_32(sample) << 8); break;
+	case 11: /* 32h ^> 24s */ as_u32(dst) = sx24s((bswap_32(sample) ^ 0x80) << 8); break;
+	case 12: /* 32h -> 32h */ as_u32(dst) = sample; break;
+	case 13: /* 32h ^> 32h */ as_u32(dst) = sample ^ 0x80000000; break;
+	case 14: /* 32h -> 32s */ as_u32(dst) = bswap_32(sample); break;
+	case 15: /* 32h ^> 32s */ as_u32(dst) = bswap_32(sample) ^ 0x80; break;
+	case 16: /* 32h -> 20h */ as_u32(dst) = sx20(sample >> 12); break;
+	case 17: /* 32h ^> 20h */ as_u32(dst) = sx20((sample ^ 0x80000000) >> 12); break;
+	case 18: /* 32h -> 20s */ as_u32(dst) = bswap_32(sx20(sample >> 12)); break;
+	case 19: /* 32h ^> 20s */ as_u32(dst) = bswap_32(sx20((sample ^ 0x80000000) >> 12)); break;
 	/* 3bytes format */
-	&&put32_1234_123,	 /* 32h -> 24h */
-	&&put32_1234_923,	 /* 32h ^> 24h */
-	&&put32_1234_321,	 /* 32h -> 24s */
-	&&put32_1234_329,	 /* 32h ^> 24s */
-	&&put32_1234_123_20,	 /* 32h -> 20h */
-	&&put32_1234_923_20,	 /* 32h ^> 20h */
-	&&put32_1234_321_20,	 /* 32h -> 20s */
-	&&put32_1234_329_20,	 /* 32h ^> 20s */
-	&&put32_1234_123_18,	 /* 32h -> 18h */
-	&&put32_1234_923_18,	 /* 32h ^> 18h */
-	&&put32_1234_321_18,	 /* 32h -> 18s */
-	&&put32_1234_329_18,	 /* 32h ^> 18s */
-};
-#endif
-
-#ifdef CONV24_LABELS
-#undef GET32_LABELS
-#undef PUT32_LABELS
-#endif
-
-#ifdef PUT32_END
-while (0) {
-put32_1234_1: as_u8(dst) = sample >> 24; goto PUT32_END;
-put32_1234_9: as_u8(dst) = (sample >> 24) ^ 0x80; goto PUT32_END;
-put32_1234_12: as_u16(dst) = sample >> 16; goto PUT32_END;
-put32_1234_92: as_u16(dst) = (sample >> 16) ^ 0x8000; goto PUT32_END;
-put32_1234_21: as_u16(dst) = bswap_16(sample >> 16); goto PUT32_END;
-put32_1234_29: as_u16(dst) = bswap_16(sample >> 16) ^ 0x80; goto PUT32_END;
-put32_1234_0123: as_u32(dst) = sx24(sample >> 8); goto PUT32_END;
-put32_1234_0923: as_u32(dst) = sx24((sample >> 8) ^ 0x800000); goto PUT32_END;
-put32_1234_3210: as_u32(dst) = sx24s(bswap_32(sample) << 8); goto PUT32_END;
-put32_1234_3290: as_u32(dst) = sx24s((bswap_32(sample) ^ 0x80) << 8); goto PUT32_END;
-put32_1234_1234: as_u32(dst) = sample; goto PUT32_END;
-put32_1234_9234: as_u32(dst) = sample ^ 0x80000000; goto PUT32_END;
-put32_1234_4321: as_u32(dst) = bswap_32(sample); goto PUT32_END;
-put32_1234_4329: as_u32(dst) = bswap_32(sample) ^ 0x80; goto PUT32_END;
-put32_1234_0123_20: as_u32(dst) = sx20(sample >> 12); goto PUT32_END;
-put32_1234_0923_20: as_u32(dst) = sx20((sample ^ 0x80000000) >> 12); goto PUT32_END;
-put32_1234_3210_20: as_u32(dst) = bswap_32(sx20(sample >> 12)); goto PUT32_END;
-put32_1234_3290_20: as_u32(dst) = bswap_32(sx20((sample ^ 0x80000000) >> 12)); goto PUT32_END;
-put32_1234_123: _put_triple(dst, sample >> 8); goto PUT32_END;
-put32_1234_923: _put_triple(dst, (sample ^ 0x80000000) >> 8); goto PUT32_END;
-put32_1234_321: _put_triple_s(dst, sample >> 8); goto PUT32_END;
-put32_1234_329: _put_triple_s(dst, (sample ^ 0x80000000) >> 8); goto PUT32_END;
-put32_1234_123_20: _put_triple(dst, sample >> 12); goto PUT32_END;
-put32_1234_923_20: _put_triple(dst, (sample ^ 0x80000000) >> 12); goto PUT32_END;
-put32_1234_321_20: _put_triple_s(dst, sample >> 12); goto PUT32_END;
-put32_1234_329_20: _put_triple_s(dst, (sample ^ 0x80000000) >> 12); goto PUT32_END;
-put32_1234_123_18: _put_triple(dst, sample >> 14); goto PUT32_END;
-put32_1234_923_18: _put_triple(dst, (sample ^ 0x80000000) >> 14); goto PUT32_END;
-put32_1234_321_18: _put_triple_s(dst, sample >> 14); goto PUT32_END;
-put32_1234_329_18: _put_triple_s(dst, (sample ^ 0x80000000) >> 14); goto PUT32_END;
+	case 20: /* 32h -> 24h */ _put_triple(dst, sample >> 8); break;
+	case 21: /* 32h ^> 24h */ _put_triple(dst, (sample ^ 0x80000000) >> 8); break;
+	case 22: /* 32h -> 24s */ _put_triple_s(dst, sample >> 8); break;
+	case 23: /* 32h ^> 24s */ _put_triple_s(dst, (sample ^ 0x80000000) >> 8); break;
+	case 24: /* 32h -> 20h */ _put_triple(dst, sample >> 12); break;
+	case 25: /* 32h ^> 20h */ _put_triple(dst, (sample ^ 0x80000000) >> 12); break;
+	case 26: /* 32h -> 20s */ _put_triple_s(dst, sample >> 12); break;
+	case 27: /* 32h ^> 20s */ _put_triple_s(dst, (sample ^ 0x80000000) >> 12); break;
+	case 28: /* 32h -> 18h */ _put_triple(dst, sample >> 14); break;
+	case 29: /* 32h ^> 18h */ _put_triple(dst, (sample ^ 0x80000000) >> 14); break;
+	case 30: /* 32h -> 18s */ _put_triple_s(dst, sample >> 14); break;
+	case 31: /* 32h ^> 18s */ _put_triple_s(dst, (sample ^ 0x80000000) >> 14); break;
+	}
 }
-#endif
 
-#ifdef CONV24_END
-#undef GET32_END
-#undef PUT32_END
-#endif
+static inline void put32float(char *dst, int32_t sample, unsigned int idx)
+{
+	snd_tmp_float_t tmp_float;
+	snd_tmp_double_t tmp_double;
 
-#ifdef PUT32F_LABELS
-/* type (0 = float, 1 = float64), endswap */
-static void *const put32float_labels[2 * 2] = {
-	&&put32f_1234_1234F,	/* 32h -> (float)h */
-	&&put32f_1234_4321F,	/* 32h -> (float)s */
-	&&put32f_1234_1234D,	/* 32h -> (float64)h */
-	&&put32f_1234_4321D,	/* 32h -> (float64)s */
-};
-#endif
+	switch (idx) {
+	case 0: /* 32h -> (float)h */
+		as_float(dst) = (float_t)((int32_t)sample) / (float_t)0x80000000UL; break;
+	case 1: /* 32h -> (float)s */
+		tmp_float.f = (float_t)((int32_t)sample) / (float_t)0x80000000UL;
+		as_u32(dst) = bswap_32(tmp_float.i); break;
+	case 2: /* 32h -> (float64)h */
+		as_double(dst) = (double_t)((int32_t)sample) / (double_t)0x80000000UL; break;
+	case 3: /* 32h -> (float64)s */
+		tmp_double.d = (double_t)((int32_t)sample) / (double_t)0x80000000UL;
+		as_u64(dst) = bswap_64(tmp_double.l); break;
+	}
+}
 
-#ifdef PUT32F_END
-put32f_1234_1234F: as_float(dst) = (float_t)((int32_t)sample) / (float_t)0x80000000UL; goto PUT32F_END;
-put32f_1234_4321F: tmp_float.f = (float_t)((int32_t)sample) / (float_t)0x80000000UL;
-		   as_u32(dst) = bswap_32(tmp_float.i); goto PUT32F_END;
-put32f_1234_1234D: as_double(dst) = (double_t)((int32_t)sample) / (double_t)0x80000000UL; goto PUT32F_END;
-put32f_1234_4321D: tmp_double.d = (double_t)((int32_t)sample) / (double_t)0x80000000UL;
-		   as_u64(dst) = bswap_64(tmp_double.l); goto PUT32F_END;
-#endif
+static inline int32_t get32float(const char *src, unsigned int idx)
+{
+	snd_tmp_float_t tmp_float;
+	snd_tmp_double_t tmp_double;
 
-#ifdef GET32F_LABELS
-/* type (0 = float, 1 = float64), endswap */
-static void *const get32float_labels[2 * 2] = {
-	&&get32f_1234F_1234,	/* (float)h -> 32h */
-	&&get32f_4321F_1234,	/* (float)s -> 32h */
-	&&get32f_1234D_1234,	/* (float64)h -> 32h */
-	&&get32f_4321D_1234,	/* (float64)s -> 32h */
-};
-#endif
-
-#ifdef GET32F_END
-get32f_1234F_1234: tmp_float.f = as_floatc(src);
-		   if (tmp_float.f >= 1.0)
-		   	sample = 0x7fffffff;
-		   else if (tmp_float.f <= -1.0)
-		   	sample = 0x80000000;
-		   else
-		   	sample = (int32_t)(tmp_float.f * (float_t)0x80000000UL);
-		   goto GET32F_END;
-get32f_4321F_1234: tmp_float.i = bswap_32(as_u32c(src));
-		   if (tmp_float.f >= 1.0)
-		   	sample = 0x7fffffff;
-		   else if (tmp_float.f <= -1.0)
-		   	sample = 0x80000000;
-		   else
-		   	sample = (int32_t)(tmp_float.f * (float_t)0x80000000UL);
-		   goto GET32F_END;
-get32f_1234D_1234: tmp_double.d = as_doublec(src);
-		   if (tmp_double.d >= 1.0)
-		   	sample = 0x7fffffff;
-		   else if (tmp_double.d <= -1.0)
-		   	sample = 0x80000000;
-		   else
-		   	sample = (int32_t)(tmp_double.d * (double_t)0x80000000UL);
-		   goto GET32F_END;
-get32f_4321D_1234: tmp_double.l = bswap_64(as_u64c(src));
-		   if (tmp_double.d >= 1.0)
-		   	sample = 0x7fffffff;
-		   else if (tmp_double.d <= -1.0)
-		   	sample = 0x80000000;
-		   else
-		   	sample = (int32_t)(tmp_double.d * (double_t)0x80000000UL);
-		   goto GET32F_END;
-#endif
+	switch (idx) {
+	case 0: /* (float)h -> 32h */
+		tmp_float.f = as_floatc(src);
+		if (tmp_float.f >= 1.0)
+			return 0x7fffffff;
+		if (tmp_float.f <= -1.0)
+			return 0x80000000;
+		return (int32_t)(tmp_float.f * (float_t)0x80000000UL);
+	case 1: /* (float)s -> 32h */
+		tmp_float.i = bswap_32(as_u32c(src));
+		if (tmp_float.f >= 1.0)
+			return 0x7fffffff;
+		if (tmp_float.f <= -1.0)
+			return 0x80000000;
+		return (int32_t)(tmp_float.f * (float_t)0x80000000UL);
+	case 2: /* (float64)h -> 32h */
+		tmp_double.d = as_doublec(src);
+		if (tmp_double.d >= 1.0)
+			return 0x7fffffff;
+		if (tmp_double.d <= -1.0)
+			return 0x80000000;
+		return (int32_t)(tmp_double.d * (double_t)0x80000000UL);
+	case 3: /* (float64)s -> 32h */
+		tmp_double.l = bswap_64(as_u64c(src));
+		if (tmp_double.d >= 1.0)
+			return 0x7fffffff;
+		if (tmp_double.d <= -1.0)
+			return 0x80000000;
+		return (int32_t)(tmp_double.d * (double_t)0x80000000UL);
+	}
+}
 
 #undef as_u8
 #undef as_u16

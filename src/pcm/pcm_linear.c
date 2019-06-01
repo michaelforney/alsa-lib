@@ -149,10 +149,6 @@ void snd_pcm_linear_convert(const snd_pcm_channel_area_t *dst_areas, snd_pcm_ufr
 			    unsigned int channels, snd_pcm_uframes_t frames,
 			    unsigned int convidx)
 {
-#define CONV_LABELS
-#include "plugin_ops.h"
-#undef CONV_LABELS
-	void *conv = conv_labels[convidx];
 	unsigned int channel;
 	for (channel = 0; channel < channels; ++channel) {
 		const char *src;
@@ -167,11 +163,7 @@ void snd_pcm_linear_convert(const snd_pcm_channel_area_t *dst_areas, snd_pcm_ufr
 		dst_step = snd_pcm_channel_area_step(dst_area);
 		frames1 = frames;
 		while (frames1-- > 0) {
-			goto *conv;
-#define CONV_END after
-#include "plugin_ops.h"
-#undef CONV_END
-		after:
+			conv(dst, src, convidx);
 			src += src_step;
 			dst += dst_step;
 		}
@@ -183,11 +175,6 @@ void snd_pcm_linear_getput(const snd_pcm_channel_area_t *dst_areas, snd_pcm_ufra
 			   unsigned int channels, snd_pcm_uframes_t frames,
 			   unsigned int get_idx, unsigned int put_idx)
 {
-#define CONV24_LABELS
-#include "plugin_ops.h"
-#undef CONV24_LABELS
-	void *get = get32_labels[get_idx];
-	void *put = put32_labels[put_idx];
 	unsigned int channel;
 	uint32_t sample = 0;
 	for (channel = 0; channel < channels; ++channel) {
@@ -203,11 +190,8 @@ void snd_pcm_linear_getput(const snd_pcm_channel_area_t *dst_areas, snd_pcm_ufra
 		dst_step = snd_pcm_channel_area_step(dst_area);
 		frames1 = frames;
 		while (frames1-- > 0) {
-			goto *get;
-#define CONV24_END after
-#include "plugin_ops.h"
-#undef CONV24_END
-		after:
+			sample = get32(src, get_idx);
+			put32(dst, sample, put_idx);
 			src += src_step;
 			dst += dst_step;
 		}

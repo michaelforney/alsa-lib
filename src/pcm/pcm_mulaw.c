@@ -165,10 +165,6 @@ void snd_pcm_mulaw_decode(const snd_pcm_channel_area_t *dst_areas,
 			  unsigned int channels, snd_pcm_uframes_t frames,
 			  unsigned int putidx)
 {
-#define PUT16_LABELS
-#include "plugin_ops.h"
-#undef PUT16_LABELS
-	void *put = put16_labels[putidx];
 	unsigned int channel;
 	for (channel = 0; channel < channels; ++channel) {
 		const unsigned char *src;
@@ -184,11 +180,7 @@ void snd_pcm_mulaw_decode(const snd_pcm_channel_area_t *dst_areas,
 		frames1 = frames;
 		while (frames1-- > 0) {
 			int16_t sample = ulaw_to_s16(*src);
-			goto *put;
-#define PUT16_END after
-#include "plugin_ops.h"
-#undef PUT16_END
-		after:
+			put16(dst, sample, putidx);
 			src += src_step;
 			dst += dst_step;
 		}
@@ -202,10 +194,6 @@ void snd_pcm_mulaw_encode(const snd_pcm_channel_area_t *dst_areas,
 			  unsigned int channels, snd_pcm_uframes_t frames,
 			  unsigned int getidx)
 {
-#define GET16_LABELS
-#include "plugin_ops.h"
-#undef GET16_LABELS
-	void *get = get16_labels[getidx];
 	unsigned int channel;
 	int16_t sample = 0;
 	for (channel = 0; channel < channels; ++channel) {
@@ -221,11 +209,7 @@ void snd_pcm_mulaw_encode(const snd_pcm_channel_area_t *dst_areas,
 		dst_step = snd_pcm_channel_area_step(dst_area);
 		frames1 = frames;
 		while (frames1-- > 0) {
-			goto *get;
-#define GET16_END after
-#include "plugin_ops.h"
-#undef GET16_END
-		after:
+			sample = get16(src, getidx);
 			*dst = s16_to_ulaw(sample);
 			src += src_step;
 			dst += dst_step;

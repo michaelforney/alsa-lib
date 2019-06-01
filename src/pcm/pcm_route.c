@@ -131,10 +131,6 @@ static void snd_pcm_route_convert1_one(const snd_pcm_channel_area_t *dst_area,
 				       const snd_pcm_route_ttable_dst_t* ttable,
 				       const snd_pcm_route_params_t *params)
 {
-#define CONV_LABELS
-#include "plugin_ops.h"
-#undef CONV_LABELS
-	void *conv;
 	const snd_pcm_channel_area_t *src_area = 0;
 	unsigned int srcidx;
 	const char *src;
@@ -156,17 +152,12 @@ static void snd_pcm_route_convert1_one(const snd_pcm_channel_area_t *dst_area,
 		return;
 	}
 	
-	conv = conv_labels[params->conv_idx];
 	src = snd_pcm_channel_area_addr(src_area, src_offset);
 	dst = snd_pcm_channel_area_addr(dst_area, dst_offset);
 	src_step = snd_pcm_channel_area_step(src_area);
 	dst_step = snd_pcm_channel_area_step(dst_area);
 	while (frames-- > 0) {
-		goto *conv;
-#define CONV_END after
-#include "plugin_ops.h"
-#undef CONV_END
-	after:
+		conv(dst, src, params->conv_idx);
 		src += src_step;
 		dst += dst_step;
 	}
@@ -181,10 +172,6 @@ static void snd_pcm_route_convert1_one_getput(const snd_pcm_channel_area_t *dst_
 					      const snd_pcm_route_ttable_dst_t* ttable,
 					      const snd_pcm_route_params_t *params)
 {
-#define CONV24_LABELS
-#include "plugin_ops.h"
-#undef CONV24_LABELS
-	void *get, *put;
 	const snd_pcm_channel_area_t *src_area = 0;
 	unsigned int srcidx;
 	const char *src;
@@ -207,18 +194,13 @@ static void snd_pcm_route_convert1_one_getput(const snd_pcm_channel_area_t *dst_
 		return;
 	}
 	
-	get = get32_labels[params->get_idx];
-	put = put32_labels[params->put_idx];
 	src = snd_pcm_channel_area_addr(src_area, src_offset);
 	dst = snd_pcm_channel_area_addr(dst_area, dst_offset);
 	src_step = snd_pcm_channel_area_step(src_area);
 	dst_step = snd_pcm_channel_area_step(dst_area);
 	while (frames-- > 0) {
-		goto *get;
-#define CONV24_END after
-#include "plugin_ops.h"
-#undef CONV24_END
-	after:
+		sample = get32(src, params->get_idx);
+		put32(dst, sample, params->put_idx);
 		src += src_step;
 		dst += dst_step;
 	}
@@ -233,34 +215,6 @@ static void snd_pcm_route_convert1_many(const snd_pcm_channel_area_t *dst_area,
 					const snd_pcm_route_ttable_dst_t* ttable,
 					const snd_pcm_route_params_t *params)
 {
-#define GET32_LABELS
-#define PUT32_LABELS
-#include "plugin_ops.h"
-#undef GET32_LABELS
-#undef PUT32_LABELS
-	static void *const zero_labels[2] = {
-		&&zero_int64,
-#if SND_PCM_PLUGIN_ROUTE_FLOAT
-		&&zero_float
-#endif
-	};
-	/* sum_type att */
-	static void *const add_labels[2 * 2] = {
-		&&add_int64_noatt, &&add_int64_att,
-#if SND_PCM_PLUGIN_ROUTE_FLOAT
-		&&add_float_noatt, &&add_float_att
-#endif
-	};
-	/* sum_type att */
-	static void *const norm_labels[2 * 2] = {
-		&&norm_int64_noatt,
-		&&norm_int64_att,
-#if SND_PCM_PLUGIN_ROUTE_FLOAT
-		&&norm_float,
-		&&norm_float,
-#endif
-	};
-	void *zero, *get32, *add, *norm, *put32;
 	int nsrcs = ttable->nsrcs;
 	char *dst;
 	int dst_step;
@@ -301,11 +255,6 @@ static void snd_pcm_route_convert1_many(const snd_pcm_channel_area_t *dst_area,
 		return;
 	}
 
-	zero = zero_labels[params->sum_idx];
-	get32 = get32_labels[params->get_idx];
-	add = add_labels[params->sum_idx * 2 + ttable->att];
-	norm = norm_labels[params->sum_idx * 2 + ttable->att];
-	put32 = put32_labels[params->put_idx];
 	dst = snd_pcm_channel_area_addr(dst_area, dst_offset);
 	dst_step = snd_pcm_channel_area_step(dst_area);
 
@@ -314,83 +263,71 @@ static void snd_pcm_route_convert1_many(const snd_pcm_channel_area_t *dst_area,
 		sum_t sum;
 
 		/* Zero sum */
-		goto *zero;
-	zero_int64: 
-		sum.as_sint64 = 0;
-		goto zero_end;
+		switch (params->sum_idx) {
+		case 0: sum.as_sint64 = 0; break;
 #if SND_PCM_PLUGIN_ROUTE_FLOAT
-	zero_float:
-		sum.as_float = 0.0;
-		goto zero_end;
+		case 1: sum.as_float = 0.0; break;
 #endif
-	zero_end:
+		}
 		for (srcidx = 0; srcidx < nsrcs; ++srcidx) {
 			const char *src = srcs[srcidx];
 			
 			/* Get sample */
-			goto *get32;
-#define GET32_END after_get
-#include "plugin_ops.h"
-#undef GET32_END
-		after_get:
+			sample = get32(src, params->get_idx);
 
 			/* Sum */
-			goto *add;
-		add_int64_att:
-			sum.as_sint64 += (int64_t) sample * ttp->as_int;
-			goto after_sum;
-		add_int64_noatt:
-			if (ttp->as_int)
-				sum.as_sint64 += sample;
-			goto after_sum;
+			switch (params->sum_idx * 2 + ttable->att) {
+			case 0:
+				if (ttp->as_int)
+					sum.as_sint64 += sample;
+				break;
+			case 1:
+				sum.as_sint64 += (int64_t) sample * ttp->as_int;
+				break;
 #if SND_PCM_PLUGIN_ROUTE_FLOAT
-		add_float_att:
-			sum.as_float += sample * ttp->as_float;
-			goto after_sum;
-		add_float_noatt:
-			if (ttp->as_int)
-				sum.as_float += sample;
-			goto after_sum;
+			case 2:
+				if (ttp->as_int)
+					sum.as_float += sample;
+				break;
+			case 3:
+				sum.as_float += sample * ttp->as_float;
+				break;
 #endif
-		after_sum:
+			}
 			srcs[srcidx] += src_steps[srcidx];
 			ttp++;
 		}
 		
 		/* Normalization */
-		goto *norm;
-	norm_int64_att:
-		div(sum.as_sint64);
-		/* fallthru */
-	norm_int64_noatt:
-		if (sum.as_sint64 > (int64_t)0x7fffffff)
-			sample = 0x7fffffff;	/* maximum positive value */
-		else if (sum.as_sint64 < -(int64_t)0x80000000)
-			sample = 0x80000000;	/* maximum negative value */
-		else
-			sample = sum.as_sint64;
-		goto after_norm;
-
+		switch (params->sum_idx * 2 + ttable->att) {
+		case 1:
+			div(sum.as_sint64);
+			/* fallthru */
+		case 0:
+			if (sum.as_sint64 > (int64_t)0x7fffffff)
+				sample = 0x7fffffff;	/* maximum positive value */
+			else if (sum.as_sint64 < -(int64_t)0x80000000)
+				sample = 0x80000000;	/* maximum negative value */
+			else
+				sample = sum.as_sint64;
+			break;
 #if SND_PCM_PLUGIN_ROUTE_FLOAT
-	norm_float:
-		sum.as_float = rint(sum.as_float);
-		if (sum.as_float > (int64_t)0x7fffffff)
-			sample = 0x7fffffff;	/* maximum positive value */
-		else if (sum.as_float < -(int64_t)0x80000000)
-			sample = 0x80000000;	/* maximum negative value */
-		else
-			sample = sum.as_float;
-		goto after_norm;
+		case 2:
+		case 3:
+			sum.as_float = rint(sum.as_float);
+			if (sum.as_float > (int64_t)0x7fffffff)
+				sample = 0x7fffffff;	/* maximum positive value */
+			else if (sum.as_float < -(int64_t)0x80000000)
+				sample = 0x80000000;	/* maximum negative value */
+			else
+				sample = sum.as_float;
+			break;
 #endif
-	after_norm:
+		}
 		
 		/* Put sample */
-		goto *put32;
-#define PUT32_END after_put32
-#include "plugin_ops.h"
-#undef PUT32_END
-	after_put32:
-		
+		put32(dst, sample, params->put_idx);
+
 		dst += dst_step;
 	}
 }
